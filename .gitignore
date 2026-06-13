@@ -1,0 +1,28 @@
+# 원본 소스 clone / 다운로드 원본 (외부 재배포 회피 — scripts/parse_*.py로 재생성)
+data/sources/
+data/kjv/kjv_raw.json
+
+# SQLite DB — CI(release.yml)가 JSONL에서 빌드해 GitHub Releases로 배포. git 본체엔 X
+*.sqlite
+*.db
+
+# 분류 중간 산출물 (최종 strong_categories.jsonl + taxonomy.md 만 추적)
+data/categories/in/
+data/categories/out/
+
+# STEPBible TAGNT — "직접 재배포 말고 github.com/STEPBible 안내" 권고 존중.
+# parse_tagnt.py 로 사용자가 직접 생성. (메인 그리스어는 byztxt=PD 로 충분)
+data/greek/tagnt_words.jsonl
+data/greek/_meta_tagnt.json
+
+# 로컬 비밀 (API 키 등) — 절대 커밋 금지
+.env
+.env.local
+.env.*.local
+
+# 임베딩 배치 중간 산출물 (최종 verses.*.int8.npy + verses.meta.jsonl 만 추적)
+data/embeddings/_partial/
+
+# 파이썬
+__pycache__/
+*.pyc

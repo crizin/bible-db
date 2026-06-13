@@ -1,0 +1,45 @@
+name: Build & Release bible.sqlite
+
+# 태그(v*)를 push하면 JSONL에서 DB를 빌드해 gzip 압축 후 Release에 첨부한다.
+# DB는 repo에 커밋하지 않고(재생성 산출물) CI가 항상 최신 JSONL에서 빌드 →
+# Release 자산이 소스와 항상 일치한다. 수동 실행도 가능(workflow_dispatch).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: false   # build_db.py's deps are inline PEP723 (sqlite-vec, numpy); no lockfile to key a cache on
+
+      - name: Build SQLite DB from JSONL
+        run: uv run scripts/build_db.py
+
+      - name: Compress
+        run: |
+          gzip -9 -c data/bible.sqlite > bible.sqlite.gz
+          zip -9 -j bible.sqlite.zip data/bible.sqlite
+          ls -lh data/bible.sqlite bible.sqlite.gz bible.sqlite.zip
+
+      - name: Attach to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            bible.sqlite.gz
+            bible.sqlite.zip
+          body: |
+            `bible.sqlite.gz` (Unix) / `bible.sqlite.zip` (Windows) — 압축 해제 후 사용.
+            스키마/사용법은 README 참조.
+            (STEPBible TAGNT 데이터는 라이선스 권고로 미포함 — NOTICE 참조)

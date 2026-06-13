@@ -1,0 +1,12 @@
+{
+  "source": "kjv",
+  "version": "KJV: King James Version (1769) with Strongs Numbers and Morphology and",
+  "books": 66,
+  "chapters": 1189,
+  "verses": 31102,
+  "chap_mismatch": [],
+  "golden": {
+    "GEN1:1_ok": true,
+    "GEN1:1": "In the beginning God created the heaven and the earth."
+  }
+}

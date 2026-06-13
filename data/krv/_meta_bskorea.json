@@ -1,0 +1,21 @@
+{
+  "source": "bskorea",
+  "version": "개역한글판 (KRV)",
+  "crawled_at": "2026-06-13T23:19:48.202873+09:00",
+  "aborted": false,
+  "books": 66,
+  "chapters": 1188,
+  "verses": 31068,
+  "failed": [
+    {
+      "book": 19,
+      "code": "PSA",
+      "chapter": 92
+    }
+  ],
+  "golden": {
+    "GEN1:1_ok": true,
+    "GEN1:2_ok": true,
+    "GEN1:2_is_sin": true
+  }
+}

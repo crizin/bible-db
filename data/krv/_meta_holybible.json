@@ -1,0 +1,14 @@
+{
+  "source": "holybible",
+  "version": "개역한글판 (RHV)",
+  "crawled_at": "2026-06-13T22:12:05.757474+09:00",
+  "books": 66,
+  "chapters": 1189,
+  "verses": 31101,
+  "failed": [],
+  "golden": {
+    "GEN1:1_ok": true,
+    "GEN1:2_ok": true,
+    "GEN1:2_is_sin": true
+  }
+}
