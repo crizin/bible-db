@@ -1,5 +1,11 @@
 # bible-db
 
+[![Build & Release](https://github.com/crizin/bible-db/actions/workflows/release.yml/badge.svg)](https://github.com/crizin/bible-db/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/crizin/bible-db?sort=semver&color=blue)](https://github.com/crizin/bible-db/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/crizin/bible-db/total?color=brightgreen)](https://github.com/crizin/bible-db/releases)
+[![Code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
+[![Data: PD · CC BY · CC BY-SA](https://img.shields.io/badge/data-PD%20%C2%B7%20CC%20BY%204.0%20%C2%B7%20CC%20BY--SA-green.svg)](NOTICE)
+
 *[English README](README.md)*
 
 **다국어 성경 데이터셋** — 4개 언어 병렬 + Strong 번호 + **원어 단어마다 의미 도메인 태그**. 전부 퍼블릭 도메인 / 오픈 라이선스 소스에서 수집했고, 깔끔한 JSONL과 단일 SQLite 파일로 제공한다.
