@@ -26,3 +26,6 @@ data/embeddings/_partial/
 # 파이썬
 __pycache__/
 *.pyc
+
+# Claude Code 워크트리 세션
+.claude/worktrees/
