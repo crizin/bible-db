@@ -4,7 +4,7 @@
 # ///
 """모든 파싱 산출물을 SQLite(bible.sqlite)로 통합.
 
-verses: 개역한글·KJV·WLC·byztxt 절 본문
+verses: 개역한글·KJV·WLC·byztxt·BSB 절 본문
 words/word_strong: 원어 단어별 + Strong 연결 (wlc→H, byz→G)
 strongs: 사전, strong_category: 의미 카테고리, tagnt_words: 판본비교
 """
@@ -82,16 +82,18 @@ def attach_vectors(conn, cur):
     cur.execute(f"CREATE VIRTUAL TABLE vec_verses USING vec0("
                 f"verse_id INTEGER PRIMARY KEY, embedding int8[{dim}] distance_metric=cosine)")
 
-    ins, missing = [], 0
+    ins, missing = [], []
     for vec, m in zip(arr, rows):
-        vid = id_map.get((m["source"], m["book"], m["chapter"], m["verse"]))
-        if vid is None:
-            missing += 1
-            continue
-        ins.append((vid, vec.tobytes()))
+        key = (m["source"], m["book"], m["chapter"], m["verse"])
+        if key in id_map:
+            ins.append((id_map[key], vec.tobytes()))
+        else:
+            missing.append(key)
+    if missing:
+        sys.exit(f"vec_verses: {len(missing)} vectors have no verse row (e.g. {missing[0]}) — "
+                 "JSONL and data/embeddings/ are out of sync")
     cur.executemany("INSERT INTO vec_verses(verse_id, embedding) VALUES(?, vec_int8(?))", ins)
-    print(f"vec_verses: {len(ins)}  ({head['model']} {dim}d int8)"
-          + (f"  WARN missing={missing}" if missing else ""))
+    print(f"vec_verses: {len(ins)}  ({head['model']} {dim}d int8)")
 
 
 def main():
@@ -104,14 +106,17 @@ def main():
     cur.executemany("INSERT INTO books VALUES(?,?,?,?)",
                     [(n, c, nm, "OT" if n <= 39 else "NT") for n, c, nm, _ in BOOKS])
 
-    # WLC(히브리)만 원본 좌표가 canonical(KJV)과 어긋난다 → canonical 좌표를 별도 부여.
-    # kjv·krv는 canonical 기준 자체, byz(TR)는 NT라 매핑 룰이 없어 모두 identity.
+    # canonical 좌표는 KJV. WLC(히브리)는 원본 좌표가 크게 어긋나 eng.json 룰로, krv는 절 경계가
+    # 다른 4곳만 KRV_CANON_FIX로 옮긴다. kjv는 기준 자체, byz(TR)·bsb는 절 구분이 KJV와 같아 identity.
     org2canon = load_org_to_canon()
     code_by_book = {n: c for n, c, _, _ in BOOKS}
 
     VSRC = {"krv": "krv/krv_holybible.jsonl",
-            "kjv": "kjv/kjv.jsonl", "wlc": "hebrew/wlc.jsonl", "byz": "greek/byz.jsonl"}
+            "kjv": "kjv/kjv.jsonl", "wlc": "hebrew/wlc.jsonl", "byz": "greek/byz.jsonl",
+            "bsb": "bsb/bsb.jsonl"}
     for src, rel in VSRC.items():
+        if not os.path.exists(os.path.join(DATA, rel)):
+            sys.exit(f"verses[{src}]: data/{rel} missing")
         rows = []
         for o in jsonl(rel):
             ch, vs = o["chapter"], o["verse"]

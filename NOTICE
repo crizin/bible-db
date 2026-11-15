@@ -20,6 +20,24 @@ MIT License — `LICENSE` 참조.
 - 출처: scrollmapper/bible_databases (원천: CrossWire KJV2006 OSIS / eBible.org)
 - ⚠️ 영국 내에서는 Crown copyright(Cambridge University Press). 영국 외 지역은 PD.
 
+### Berean Standard Bible (BSB) — `data/bsb/`
+- 라이선스: **Public Domain** (2023-04-30 퍼블릭 도메인 헌정, 이용 허락 불필요)
+- 출처: Berean Bible (berean.bible / bereanbible.com) 공식 배포본
+  `https://bereanbible.com/bsb.txt` — 받은 판·날짜·sha256은 `data/bsb/_meta_bsb.json`
+- 라이선스 문구 (https://berean.bible/licensing.htm 원문):
+  > The Berean Bible and Majority Bible texts are officially placed into the public domain
+  > as of April 30, 2023. See terms and conditions.
+  >
+  > Licensing is not required for any use. However, you are welcome to complete the
+  > licensing form in order to receive communications as we develop new resources.
+- 배포본 머리 문구 (`bsb.txt` 원문):
+  > The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub,
+  > Discovery Bible, unfoldingWord, Bible Aquifer, OpenBible.com, and the Berean Bible
+  > Translation Committee.
+  >
+  > This text of God's Word has been dedicated to the public domain. Free resources and
+  > databases are available at BereanBible.com.
+
 ### 히브리어 Westminster Leningrad Codex — `data/hebrew/`
 - 본문(자음·모음·악센트): **Public Domain** (Leningrad Codex 기반)
 - 형태소·Strong 태깅: **CC BY 4.0** — Open Scriptures Hebrew Bible
@@ -50,12 +68,12 @@ MIT License — `LICENSE` 참조.
 
 ### 의미 벡터 색인 (Semantic Vector Index) — `data/embeddings/`
 - 라이선스: **CC BY 4.0** (본 프로젝트가 산출한 벡터)
-- 한국어(개역한글)·영어(KJV) 절 본문을 **Google Gemini Embedding 2**로 임베딩한 768차원
+- 한국어(개역한글)·영어(BSB) 절 본문을 **Google Gemini Embedding 2**로 임베딩한 768차원
   int8 벡터(`verses.gemini2-768.int8.npy` + `verses.meta.jsonl`). `build_db.py`가
   `bible.sqlite`의 sqlite-vec `vec0` 테이블(`vec_verses`)로 통합한다.
 - 임베딩 모델: Google Gemini Embedding 2 (Google LLC). Gemini API 약관에 따라 생성된
   출력물이며, 모델 가중치가 아니라 본문의 벡터 표현만 배포한다. 본문 자체는 위
-  개역한글/KJV 항목의 라이선스를 그대로 따른다(벡터는 derived 표현).
+  개역한글/BSB 항목의 라이선스를 그대로 따른다(벡터는 derived 표현).
 - 귀속 표기: "bible-db semantic vectors (Gemini Embedding 2)"
 
 ## 포함하지 않은 데이터

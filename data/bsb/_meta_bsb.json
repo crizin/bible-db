@@ -1,0 +1,43 @@
+{
+  "source": "bsb",
+  "version": "Berean Standard Bible (BSB)",
+  "edition": "Current, updated to 3rd Printing",
+  "url": "https://bereanbible.com/bsb.txt",
+  "downloads_page": "https://berean.bible/downloads.htm",
+  "license_page": "https://berean.bible/licensing.htm",
+  "license": "Public Domain (dedicated 2023-04-30)",
+  "fetched_at": "2026-11-15T09:26:48+00:00",
+  "last_modified": "Fri, 31 Jul 2026 14:02:14 GMT",
+  "bytes": 4331393,
+  "sha256": "2ac3af1de52d4e68261cba91d85c320b7eadc6560e830d99e591767b8ff5ca96",
+  "attribution": [
+    "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, unfoldingWord, Bible Aquifer, OpenBible.com, and the Berean Bible Translation Committee. ",
+    "This text of God's Word has been dedicated to the public domain. Free resources and databases are available at BereanBible.com."
+  ],
+  "books": 66,
+  "chapters": 1189,
+  "verses": 31102,
+  "empty_verses": [
+    "MAT 17:21",
+    "MAT 18:11",
+    "MAT 23:14",
+    "MRK 7:16",
+    "MRK 9:44",
+    "MRK 9:46",
+    "MRK 11:26",
+    "MRK 15:28",
+    "LUK 17:36",
+    "LUK 23:17",
+    "JHN 5:4",
+    "ACT 8:37",
+    "ACT 15:34",
+    "ACT 24:7",
+    "ACT 28:29",
+    "ROM 16:24"
+  ],
+  "chap_mismatch": [],
+  "golden": {
+    "GEN1:1_ok": true,
+    "GEN1:1": "In the beginning God created the heavens and the earth."
+  }
+}

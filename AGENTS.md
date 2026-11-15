@@ -26,8 +26,9 @@ first. Never silently.
   preserved verbatim (like the texts), and `build_db.py` folds it into `vec_verses`.
 - `data/sources/` (upstream clones) are **not** committed — parse scripts fetch them.
 - Verse `source` values: `krv` (Korean 개역한글, from holybible.or.kr) · `kjv` ·
-  `wlc` (Hebrew) · `byz` (Greek). A second Korean crawl (bskorea) is diffed at build
-  time by `crosscheck.py` for verification but **not** loaded into the DB.
+  `bsb` (Berean Standard Bible, official `bsb.txt` from bereanbible.com) · `wlc` (Hebrew) ·
+  `byz` (Greek). A second Korean crawl (bskorea) is diffed at build time by `crosscheck.py`
+  for verification but **not** loaded into the DB.
 
 ## Regeneration workflow
 
@@ -35,9 +36,15 @@ first. Never silently.
   (Korean also: `crosscheck.py` to diff the two crawls)
 - Categories: `split_strongs.py` → batch classification (follow `taxonomy.md`) →
   `merge_categories.py` (normalizes + validates taxonomy keys)
-- Vectors: `embed_verses.py` (ko+en verses → Gemini Embedding 2, 768-d int8, **needs
-  `GEMINI_API_KEY`**) → commits `data/embeddings/verses.*.int8.npy` + `verses.meta.jsonl`
-  → `build_db.py` folds them into `vec_verses`. Regenerate **only** to change model/dim.
+- Vectors: `embed_verses.py` (`krv` + `bsb` verses → Gemini Embedding 2, 768-d int8,
+  **needs `GEMINI_API_KEY`**) → commits `data/embeddings/verses.*.int8.npy` +
+  `verses.meta.jsonl` → `build_db.py` folds them into `vec_verses`. It copies every committed
+  row whose `(source, book, chapter, verse)` is still wanted and embeds only the missing
+  ones, so adding or swapping a source never re-rolls the others. Meta rows carry `sha`
+  (sha256 prefix of the embedded text) and a row whose text no longer matches is
+  re-embedded on its own; `krv` rows have no `sha`, so they are copied on the key alone.
+  `--fresh <source>` re-embeds one whole source; bare `--fresh` re-embeds everything — only
+  for a model/dim change.
 - `build_db.py` reads only JSONL + committed vectors — no `data/sources/`, no API key —
   so CI builds the full DB (text + `vec_verses`).
 
@@ -54,6 +61,14 @@ first. Never silently.
   30:30, Ps 72:19) leaving KJV 30:31/72:20 without a krv counterpart, and 2Co 13 shifts up
   by one after krv 11 absorbs KJV 13:12; krv splits one KJV verse in two (Song 6:13→krv
   6:13+6:14, 3Jn 1:14→krv 1:14+1:15), both folding back onto the one KJV canon coordinate.
+  **bsb** has exactly KJV's 31,102 verse numbers, so its canonical coordinate is identity.
+  Two content-level differences keep the numbering: Php 1:16–17 come in critical-text order
+  (bsb 16 ≈ KJV 17 and vice versa — krv has the same order, so krv and bsb still line up),
+  and Rev 12:17 ends with the clause KJV puts at the start of 13:1. Psalm titles sit at the
+  start of verse 1, as BSB prints them.
+- **Empty bsb verses**: the 16 verses BSB omits on text-critical grounds (MAT 17:21 … ROM
+  16:24, listed in `data/bsb/_meta_bsb.json`) are rows with `text=""`, exactly as the
+  official `bsb.txt` has them. Never fill them in; they get no vector.
 - **Strong prefix**: `word_strong.strong` is `H####` (Hebrew/wlc) or `G####`
   (Greek/byz); dictionary keys match. WLC lemma `b/7225` = morpheme `b` + Strong
   `7225` — extract digits only.
@@ -62,17 +77,19 @@ first. Never silently.
 - **Categories**: multi-label with one `is_primary` (the main sense). Polysemous
   words span several categories; `is_primary=1` is the precision lever for search.
 - **Vectors**: `vec_verses` is a `sqlite-vec` `vec0` table (int8, cosine) — load the
-  extension (`sqlite_vec.load`) to query it; `verse_id` maps to `verses.id`. Only ko+en
-  are embedded. gemini-embedding-2 collapses a plain list into **one** embedding — wrap
-  each text in a `types.Content` to get one per verse (see `embed_verses.py`). 768-d
-  output is already L2-normalized. Query the same way you embedded (plain text, no
+  extension (`sqlite_vec.load`) to query it; `verse_id` maps to `verses.id`. Only `krv`
+  and `bsb` are embedded (no `kjv` vectors). gemini-embedding-2 collapses a plain list
+  into **one** embedding — wrap each text in a `types.Content` to get one per verse (see
+  `embed_verses.py`). 768-d output is already L2-normalized. Query the same way you embedded (plain text, no
   task instruction) to stay in one space.
 
 ## Verify after any data change
 
-- Golden samples: Gen 1:1; **Gen 1:2 Korean must read "하나님의 신"** — if it reads
-  "하나님의 영" that's 개역개정 (copyrighted!), not 개역한글 — stop immediately.
-- Counts: Korean ~31,100 verses, KJV 31,102, 66 books, 1,189 chapters.
+- Golden samples: Gen 1:1 (`bsb` reads "the heavens", `kjv` "the heaven"); **Gen 1:2
+  Korean must read "하나님의 신"** — if it reads "하나님의 영" that's 개역개정
+  (copyrighted!), not 개역한글 — stop immediately.
+- Counts: Korean ~31,100 verses, KJV 31,102, BSB 31,102 (16 with empty text), 66 books,
+  1,189 chapters.
 - Category keys: only `major>minor` from `taxonomy.md` (merge_categories validates).
 - Versification: every `wlc` body verse (`canon_verse>0`) maps to an existing `kjv`
   coordinate — 0 orphans. Spot-check Ps 3 title → `canon_verse=0`, body `wlc 3:2` →
@@ -80,10 +97,14 @@ first. Never silently.
   canon coordinate — 0 orphans (the 4 `KRV_CANON_FIX` spots); the only KJV verses with no
   krv counterpart are the 3 krv merges (1Sa 30:31, Ps 72:20, 2Co 13:12). Spot-check
   `krv` 2Co 13:13 → `canon 13:14` (aligns with KJV 13:14, the grace), Song 6:14 → `canon 6:13`.
-- Vectors (if `data/embeddings/` present): `vec_verses` count == 62,203 (31,101 ko +
-  31,102 en); a self-KNN of any row returns itself at distance ≈ 0; smoke a real query
+  Every `bsb` verse maps 1:1 onto a `kjv` canon coordinate — 0 orphans, no KJV verse without
+  a bsb row. `parse_bsb.py` exits unless its JSONL rows, re-serialized under the source's 3
+  header lines, reproduce `bsb.txt` byte-for-byte (sha256 in `_meta_bsb.json`).
+- Vectors (if `data/embeddings/` present): `vec_verses` count == 62,187 (31,101 krv +
+  31,086 bsb — the 16 empty bsb verses have none); a self-KNN of any row returns itself at
+  distance ≈ 0 (rows with identical text tie at 0, so look past k=1); smoke a real query
   ("the good shepherd" → John 10 / Ps 23, "사랑은 오래 참고" → 1 Cor 13, and a Korean
-  query should surface English hits). Without `data/embeddings/`, `build_db.py` skips
+  query should surface English `bsb` hits). Without `data/embeddings/`, `build_db.py` skips
   `vec_verses` cleanly (text-only build still valid).
 
 ## License

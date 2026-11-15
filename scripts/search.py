@@ -7,7 +7,7 @@
   GEMINI_API_KEY=... uv run scripts/search.py "불안할 때 위로가 되는 말씀" --lang ko --k 10
 
 쿼리도 문서와 똑같이 instruction 없이 임베딩한다(같은 벡터 공간 유지). Gemini Embedding 2는
-cross-lingual이라 한국어 쿼리로 영어(KJV) 구절도, 영어 쿼리로 한국어 구절도 매칭된다.
+cross-lingual이라 한국어 쿼리로 영어(BSB) 구절도, 영어 쿼리로 한국어 구절도 매칭된다.
 결과는 canonical 좌표로 묶어 한/영을 나란히 보여준다.
 """
 import os, sys, argparse, sqlite3
@@ -21,7 +21,7 @@ ROOT = os.path.normpath(os.path.join(HERE, ".."))
 DB = os.path.join(ROOT, "data", "bible.sqlite")
 MODEL = "gemini-embedding-2"
 DIM = 768
-SRC = {"ko": ("krv",), "en": ("kjv",), "all": ("krv", "kjv")}
+SRC = {"ko": ("krv",), "en": ("bsb",), "all": ("krv", "bsb")}
 
 
 def embed_query(text):
@@ -79,9 +79,9 @@ def main():
                 "SELECT v.source, b.code, v.chapter, v.verse, v.text "
                 "FROM verses v JOIN books b ON b.book = v.book "
                 "WHERE v.book=? AND v.canon_chapter=? AND v.canon_verse=? "
-                "AND v.source IN ('krv','kjv') ORDER BY v.source DESC",
+                "AND v.source IN ('krv','bsb') AND v.text <> '' ORDER BY v.source DESC",
                 (book, cch, cv)):
-            tag = "KR" if source.startswith("krv") else "EN"
+            tag = "KR" if source == "krv" else "EN"
             print(f"    {tag} {code} {ch}:{vs}  {text}")
     if not hits:
         print("  (no vec_verses — build with embeddings present, or check --lang)")
