@@ -11,8 +11,8 @@ build_db.py가 bible.sqlite의 vec0 테이블로 통합한다 → CI는 키 없�
 
 벡터는 한 번 생성하면 verbatim 보존(텍스트 immutable 원칙의 derived 짝). Gemini는 비결정적이라
 다시 뽑으면 값이 달라지므로, 기존 산출물이 같은 모델·차원이면 (source, book, chapter, verse)
-키가 같은 행은 그대로 옮기고 없는 행만 새로 임베딩한다. meta 행의 sha(임베딩한 본문의 sha256 앞
-16자리)가 지금 본문과 다르면 그 행만 다시 뽑는다 — sha가 없는 행(krv)은 키만 보고 옮긴다.
+키가 같고 meta 행의 sha(임베딩한 본문의 sha256 앞 16자리)가 지금 본문과 같은 행은 그대로 옮기고,
+나머지(새 절·본문이 바뀐 절)만 새로 임베딩한다.
 한 source를 통째로 다시 뽑으려면 --fresh <source>, 모델/차원을 바꿀 때는 --fresh(전부 새로).
 본문이 빈 절(bsb의 번호만 있는 절)은 임베딩하지 않는다. 배치별 부분 결과(_partial/)로 중단 후
 이어받기를 지원한다.
@@ -63,7 +63,7 @@ def load_items():
 
 
 def load_existing():
-    """같은 모델·차원의 기존 산출물 → {(source, book, chapter, verse): (int8 행, sha|None)}. 없으면 {}."""
+    """같은 모델·차원의 기존 산출물 → {(source, book, chapter, verse): (int8 행, sha)}. 없으면 {}."""
     if not (os.path.exists(NPY) and os.path.exists(META)):
         return {}
     lines = [json.loads(x) for x in open(META, encoding="utf-8") if x.strip()]
@@ -120,12 +120,10 @@ def main():
     if a.fresh:
         old = {k: v for k, v in old.items() if k[0] not in a.fresh}
     shas = {it[:4]: text_sha(it[4]) for it in items}
-    keep = {k: old[k] for k in shas if k in old and old[k][1] in (None, shas[k])}
+    keep = {k: old[k][0] for k in shas if k in old and old[k][1] == shas[k]}
     todo = [it for it in items if it[:4] not in keep]
     reused = n - len(todo)
-    unchecked = sum(1 for _, sha in keep.values() if sha is None)
-    print(f"items: {n}  reused: {reused} ({unchecked} without sha)  to embed: {len(todo)}  "
-          f"model: {MODEL}  dim: {DIM}")
+    print(f"items: {n}  reused: {reused}  to embed: {len(todo)}  model: {MODEL}  dim: {DIM}")
 
     new = {}
     if todo:
@@ -149,7 +147,7 @@ def main():
         assert vecs.shape == (len(todo), DIM), vecs.shape
         new = {it[:4]: v for it, v in zip(todo, vecs)}
 
-    arr = np.stack([keep[it[:4]][0] if it[:4] in keep else new[it[:4]] for it in items])
+    arr = np.stack([keep[it[:4]] if it[:4] in keep else new[it[:4]] for it in items])
     assert arr.shape == (n, DIM) and arr.dtype == np.int8, (arr.shape, arr.dtype)
     np.save(NPY, arr)
 
@@ -157,13 +155,9 @@ def main():
         f.write(json.dumps({"_meta": True, "model": MODEL, "dim": DIM, "quant": "int8",
                             "normalized": True, "count": n,
                             "sources": [s for s, _ in SOURCES]}, ensure_ascii=False) + "\n")
-        for it in items:
-            src, bk, ch, vs = k = it[:4]
-            row = {"source": src, "book": bk, "chapter": ch, "verse": vs}
-            sha = keep[k][1] if k in keep else shas[k]
-            if sha:
-                row["sha"] = sha
-            f.write(json.dumps(row) + "\n")
+        for src, bk, ch, vs, _ in items:
+            f.write(json.dumps({"source": src, "book": bk, "chapter": ch, "verse": vs,
+                                "sha": shas[(src, bk, ch, vs)]}) + "\n")
 
     print(f"\nwrote {os.path.relpath(NPY, ROOT)}  {arr.shape} {arr.dtype} "
           f"({arr.nbytes // 1024 // 1024} MB)")

@@ -40,9 +40,9 @@ first. Never silently.
   **needs `GEMINI_API_KEY`**) → commits `data/embeddings/verses.*.int8.npy` +
   `verses.meta.jsonl` → `build_db.py` folds them into `vec_verses`. It copies every committed
   row whose `(source, book, chapter, verse)` is still wanted and embeds only the missing
-  ones, so adding or swapping a source never re-rolls the others. Meta rows carry `sha`
-  (sha256 prefix of the embedded text) and a row whose text no longer matches is
-  re-embedded on its own; `krv` rows have no `sha`, so they are copied on the key alone.
+  ones, so adding or swapping a source never re-rolls the others. Every meta row carries
+  `sha` (sha256 prefix of the embedded text); a row whose text no longer matches is
+  re-embedded on its own.
   `--fresh <source>` re-embeds one whole source; bare `--fresh` re-embeds everything — only
   for a model/dim change.
 - `build_db.py` reads only JSONL + committed vectors — no `data/sources/`, no API key —
